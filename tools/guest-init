@@ -1,0 +1,72 @@
+#!/bin/sh
+export PATH=/opt/modern-linux/bin:/bin
+export HOME=/root TERM=xterm-256color TERMINFO=/opt/modern-linux/share/terminfo
+export XDG_CONFIG_HOME=/root/.config XDG_DATA_HOME=/root/.local/share
+fail() {
+    echo MODERN_LINUX_CENTOS7_FAIL
+    poweroff -f
+    sleep 1000
+}
+trap fail EXIT
+set -eu
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+exec </dev/console >/dev/console 2>&1
+mkdir -p /dev/pts /tmp /root/.config /root/.local/share
+mount -t devpts devpts /dev/pts
+uname -r | grep -q '^3\.10\.0-1160\.el7\.x86_64$'
+uname -a
+printf 'alpha\nbeta\n' >/tmp/input
+while IFS= read -r tool <&3 || [ -n "$tool" ]; do
+    tool=$(printf '%s\n' "$tool" | /bin/busybox sed 's/#.*//;s/^[[:space:]]*//;s/[[:space:]]*$//')
+    case "$tool" in
+    '') continue ;;
+    tmux)
+        tmux -V
+        tmux -L smoke -f /dev/null new-session -d -s smoke '/bin/sleep 30'
+        tmux -L smoke has-session -t smoke
+        tmux -L smoke kill-server
+        ;;
+    neovim) nvim --headless -u NONE -i NONE /tmp/input '+lua assert(vim.api.nvim_buf_get_lines(0,0,1,false)[1] == "alpha")' '+q!' ;;
+    fish) fish --no-config -c 'test (math 2 + 3) = 5; and string match -q "a*" alpha' ;;
+    ripgrep) rg alpha /tmp/input ;;
+    fd) fd --no-ignore input /tmp | grep -q input ;;
+    fzf) fzf --filter=alpha </tmp/input | grep -q alpha ;;
+    bat) bat --paging=never --color=never /tmp/input ;;
+    exa) exa /tmp ;;
+    delta)
+        delta --version
+        delta --paging=never </dev/null
+        ;;
+    procs)
+        /bin/sleep 30 &
+        probe_pid=$!
+        procs --color disable --theme dark --pager disable >/tmp/procs-output
+        cat /tmp/procs-output
+        grep -Eq "^[[:space:]]*${probe_pid}[[:space:]]" /tmp/procs-output
+        kill "$probe_pid"
+        ;;
+    zoxide)
+        zoxide add /tmp
+        zoxide query tmp
+        ;;
+    starship)
+        starship --version
+        starship init bash >/tmp/starship-init
+        ;;
+    mcfly)
+        mcfly --version
+        mcfly init bash >/tmp/mcfly-init
+        ;;
+    *)
+        echo "Unknown tool: $tool"
+        exit 1
+        ;;
+    esac
+    echo "PASS: $tool"
+done 3</opt/modern-linux/list.txt
+echo MODERN_LINUX_CENTOS7_PASS
+trap - EXIT
+poweroff -f
+sleep 1000

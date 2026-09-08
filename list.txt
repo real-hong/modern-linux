@@ -1,0 +1,13 @@
+tmux
+neovim
+fish
+starship
+ripgrep
+exa
+bat
+fd
+fzf
+zoxide
+delta
+procs
+mcfly
