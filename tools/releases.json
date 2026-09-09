@@ -32,10 +32,10 @@
       "url": "https://github.com/BurntSushi/ripgrep/releases/tag/15.2.0"
     },
     {
-      "repo": "ogham/exa",
-      "tag": "v0.10.1",
-      "published": "2021-04-12T21:42:01Z",
-      "url": "https://github.com/ogham/exa/releases/tag/v0.10.1"
+      "repo": "eza-community/eza",
+      "tag": "v0.23.5",
+      "published": "2026-07-09T10:21:04Z",
+      "url": "https://github.com/eza-community/eza/releases/tag/v0.23.5"
     },
     {
       "repo": "sharkdp/bat",

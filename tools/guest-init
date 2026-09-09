@@ -40,7 +40,12 @@ while IFS= read -r tool <&3 || [ -n "$tool" ]; do
     fd) fd --no-ignore input /tmp | grep -q input ;;
     fzf) fzf --filter=alpha </tmp/input | grep -q alpha ;;
     bat) bat --paging=never --color=never /tmp/input ;;
-    exa) exa /tmp ;;
+    eza)
+        eza --version
+        eza --color=never --oneline /tmp >/tmp/eza-output
+        cat /tmp/eza-output
+        grep -qx input /tmp/eza-output
+        ;;
     delta)
         delta --version
         printf '%s\n' 'diff --git a/input b/input' '--- a/input' '+++ b/input' \

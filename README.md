@@ -34,7 +34,7 @@ sudo tar xzf modern-linux-x86_64.tar.gz -C /
 | fish | 3.7.1 | 4.9.3 |
 | starship | 1.22.1 | 1.26.0 |
 | ripgrep | 14.1.1 | 15.2.0 |
-| exa | 0.10.1 | 0.10.1（上游最新 release） |
+| eza | exa 0.10.1 | 0.23.5 |
 | bat | 0.24.0 | 0.26.1 |
 | fd | 10.2.0 | 10.5.0 |
 | fzf | 0.60.3 | 0.74.3 |
@@ -43,17 +43,17 @@ sudo tar xzf modern-linux-x86_64.tar.gz -C /
 | procs | 0.14.8 | 0.14.12 |
 | mcfly | 0.9.3 | 0.9.4 |
 
-exa 保留原项目，没有替换成 eza。使用固定的 Rust 1.98.1 和 Go 1.27.1；升级编译器不等于提高目标机器的内核要求，最终以全系统测试为准。CPU 使用 x86-64 基线，不使用 `native`、AVX2 或 x86-64-v3。Cargo 使用 `--locked`。fish 4.x 使用 Rust 和静态 PCRE2，已移除旧版 fish 3.7.1 的 CMake 补丁。
+exa 已替换为 eza，命令名改为 `eza`。使用固定的 Rust 1.98.1 和 Go 1.27.1；升级编译器不等于提高目标机器的内核要求，最终以全系统测试为准。CPU 使用 x86-64 基线，不使用 `native`、AVX2 或 x86-64-v3。Cargo 使用 `--locked`。fish 4.x 使用 Rust 和静态 PCRE2，已移除旧版 fish 3.7.1 的 CMake 补丁。
 
 源码版本固定不等于完全可复现构建：容器基础标签、Alpine 仓库更新和上游发布归档仍是外部输入。包内 `SOURCES.sha256` 记录下载归档哈希（不是预先固定的可信校验值），`VERSIONS` 记录工具版本，`TOOLCHAIN` 记录实际编译器版本，`RELEASES.json` 保存上游版本查询记录，`SHA256SUMS` 记录二进制及资源哈希。
 
 ## 验证结果
 
-2026-09-09：上述 13 个工具全部通过静态 ELF 审计和真实 CentOS 7 内核冒烟测试，未发生版本回退。发布包约 46 MB；`build/kernel-test/PASS` 记录对应包的 SHA-256。
+2026-09-09：上述 13 个工具全部通过静态 ELF 审计和真实 CentOS 7 内核冒烟测试，未发生版本回退。发布包约 47 MB；`build/kernel-test/PASS` 记录对应包的 SHA-256。
 
 每个安装的 ELF 都必须通过 `readelf` 审计：无 `PT_INTERP`、无 `DT_NEEDED`。随后 QEMU 使用 TCG 软件模拟和 `qemu64` CPU，无需 KVM，启动 CentOS 7 官方 RPM 中的 **3.10.0-1160.el7.x86_64** 内核。RPM 由 CentOS GPG 密钥验证。
 
-guest 是无共享库的精简 initramfs，不是完整 CentOS 用户空间；内核是真实 CentOS 7 内核。检查包括 tmux 会话和 PTY、Neovim headless 文件读写、子进程及 PTY、fish 计算和随机数、rg/fd/fzf 搜索、bat/exa/procs 运行、zoxide 数据库操作、McFly 历史记录写入和导出、starship 提示符生成、delta 差异渲染及 shell 初始化。它是基础功能冒烟测试，不等于所有交互、插件和网络路径均经过测试。
+guest 是无共享库的精简 initramfs，不是完整 CentOS 用户空间；内核是真实 CentOS 7 内核。检查包括 tmux 会话和 PTY、Neovim headless 文件读写、子进程及 PTY、fish 计算和随机数、rg/fd/fzf 搜索、bat/eza/procs 运行、zoxide 数据库操作、McFly 历史记录写入和导出、starship 提示符生成、delta 差异渲染及 shell 初始化。它是基础功能冒烟测试，不等于所有交互、插件和网络路径均经过测试。
 
 仅测试成功时生成 `build/kernel-test/PASS`，内容为对应发布包的 SHA-256。完整串口日志在 `build/kernel-test/serial.log`。失败或未测试的包不可宣称已通过 CentOS 7 内核验证。
 

@@ -30,7 +30,7 @@ mapfile -t requested < <(sed 's/#.*//;s/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d'
     exit 1
 }
 for tool in "${requested[@]}"; do
-    case $tool in tmux | neovim | fish | starship | ripgrep | exa | bat | fd | fzf | zoxide | delta | procs | mcfly) ;; *)
+    case $tool in tmux | neovim | fish | starship | ripgrep | eza | bat | fd | fzf | zoxide | delta | procs | mcfly) ;; *)
         echo "Unsupported tool: $tool" >&2
         exit 1
         ;;
@@ -58,7 +58,7 @@ for tool in "${requested[@]}"; do
     case $tool in
     starship) rust_tool starship 1.26.0 starship ;;
     ripgrep) rust_tool ripgrep 15.2.0 rg ;;
-    exa) rust_tool exa 0.10.1 exa ;;
+    eza) rust_tool eza 0.23.5 eza ;;
     bat) rust_tool bat 0.26.1 bat ;;
     fd) rust_tool fd-find 10.5.0 fd ;;
     zoxide) rust_tool zoxide 0.10.0 zoxide ;;

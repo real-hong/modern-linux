@@ -3,7 +3,7 @@ neovim
 fish
 starship
 ripgrep
-exa
+eza
 bat
 fd
 fzf
