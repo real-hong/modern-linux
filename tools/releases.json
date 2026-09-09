@@ -84,6 +84,42 @@
       "tag": "1.98.1",
       "published": "2026-09-03T13:14:07Z",
       "url": "https://github.com/rust-lang/rust/releases/tag/1.98.1"
+    },
+    {
+      "tool": "gdb",
+      "tag": "17.2",
+      "published": "2026-05-10",
+      "url": "https://sourceware.org/pub/gdb/releases/"
+    },
+    {
+      "tool": "cgdb",
+      "tag": "0.8.0",
+      "published": null,
+      "url": "https://cgdb.github.io/"
+    },
+    {
+      "tool": "valgrind",
+      "tag": "3.27.1",
+      "published": "2026-05-20",
+      "url": "https://valgrind.org/downloads/current.html"
+    },
+    {
+      "tool": "git",
+      "tag": "2.55.0",
+      "published": "2026-06-29",
+      "url": "https://git-scm.com/"
+    },
+    {
+      "tool": "cmake",
+      "tag": "4.4.3",
+      "published": null,
+      "url": "https://cmake.org/download/"
+    },
+    {
+      "tool": "git-libcurl",
+      "tag": "8.22.0",
+      "published": "2026-09-02",
+      "url": "https://curl.se/download.html"
     }
   ]
 }

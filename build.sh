@@ -13,6 +13,11 @@ esac
 }
 mkdir -p build dist
 if [[ $mode != test ]]; then
+    if sed 's/#.*//;s/^[[:space:]]*//;s/[[:space:]]*$//' list.txt | grep -qx valgrind; then
+        "$engine" build --network=host -t localhost/modern-linux-valgrind-builder -f tools/Containerfile.valgrind .
+        "$engine" run --rm --network=host --security-opt label=disable \
+            -e JOBS="${JOBS:-4}" -v "$PWD:/work" localhost/modern-linux-valgrind-builder bash /work/tools/build-valgrind.sh
+    fi
     "$engine" build --network=host -t localhost/modern-linux-builder -f tools/Containerfile .
     "$engine" run --rm --network=host --security-opt label=disable \
         -e JOBS="${JOBS:-4}" -v "$PWD:/work" localhost/modern-linux-builder bash /work/tools/build-inside.sh

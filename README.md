@@ -1,6 +1,6 @@
 # modern-linux：CentOS 7 静态工具包
 
-读取 `list.txt`，从源码构建全部 13 个工具。目标是 **x86_64、musl 全静态 ELF、CentOS 7 的 3.10 内核**。默认流程包括 QEMU 全系统验证，不以 CentOS 容器中的运行结果代替旧内核测试。
+读取 `list.txt`，从源码构建全部 18 个工具。目标是 **x86_64、静态可执行文件、CentOS 7 的 3.10 内核**。除 Valgrind 使用 CentOS 7 glibc 构建并携带必需的预加载模块外，其余工具使用 musl 全静态构建。默认流程包括 QEMU 全系统验证，不以 CentOS 容器中的运行结果代替旧内核测试。
 
 ```sh
 ./build.sh          # 编译 + 静态审计 + CentOS 7 内核冒烟测试
@@ -19,13 +19,17 @@ sudo tar xzf modern-linux-x86_64.tar.gz -C /
 
 使用固定路径 `/opt/modern-linux`，确保 fish、Neovim 和 terminfo 能找到随包携带的资源。`neovim` 的命令名为 `nvim`，`ripgrep` 为 `rg`，`fd` 为 `fd`，`delta` 为 `delta`。不要只复制 `bin/`。
 
-“无依赖”在这里指**无动态加载器、无共享库依赖，目标机无须安装库包**。编辑器 runtime、shell 函数和终端数据库作为包内资源分发。它不意味着凭空提供 git、SSH、剪贴板服务、语言服务器、编译器或任意插件的依赖；调用这些可选功能仍需对应外部程序。tmux 中启动的默认 shell 由系统提供。
+除下面说明的 Valgrind 例外，“无依赖”指**可执行文件无动态加载器、无共享库依赖，目标机无须为这些可执行文件安装库包**。编辑器 runtime、shell 函数和终端数据库作为包内资源分发。包中包含 Git；SSH、剪贴板服务、语言服务器、编译器和 Make/Ninja 等构建后端仍由目标环境提供；调用这些可选功能仍需对应外部程序。tmux 中启动的默认 shell 由系统提供。
 
-全静态 musl 不支持 `dlopen` 动态扩展：Neovim 禁用随包 Tree-sitter `.so` 解析器，不能加载外部 C/Lua 动态模块；内置 Lua、常规编辑及传统语法高亮仍可使用。若需要这些动态插件功能，就不能同时保持这里的严格全静态约束。
+全静态 musl 不支持 `dlopen` 动态扩展：Neovim 禁用随包 Tree-sitter `.so` 解析器，不能加载外部 C/Lua 动态模块；内置 Lua、常规编辑及传统语法高亮仍可使用。GDB 禁用 Python、Guile、debuginfod 等可选集成，支持本地调试和 TUI；Python pretty-printer 不可用；静态 musl 构建不能加载目标 glibc 的 `libthread_db`，不保证 glibc 多线程调试功能。CGDB 使用包内 GDB。
+
+Valgrind 的启动程序、工具引擎及辅助 ELF 均静态链接；仅放行 `libexec/valgrind/` 中六个固定名称的 `vgpreload_*-amd64-linux.so` 模块。这些模块注入被测程序，依赖该程序使用的 glibc（CentOS 7 为 2.17），不能宣称整个包完全不含共享库。Valgrind 面向 CentOS 7 glibc 程序；其分析报告脚本需要目标机器的 Perl。对静态被测程序，内存分配拦截有额外限制，参见 [Valgrind FAQ](https://valgrind.org/docs/manual/faq.html)。
+
+Git 使用专用静态 libcurl 8.22.0，包含 HTTP/HTTPS 传输辅助程序，随包提供 CA 证书；SSH 传输需要外部 SSH。禁用可选 Rust 子系统以及 Perl、Python 和 Tcl/Tk 辅助功能（例如 git-svn、git-send-email、git-gui）。CMake 同时提供 `ctest`、`cpack` 和完整模块资源，不包含编译器；禁用 GUI 和 curses 配置界面。
 
 ## 版本及兼容性策略
 
-以 2026-09-09 官方 GitHub latest release 为准，版本固定在 `tools/build-inside.sh`，查询记录见 `tools/releases.json`。不使用 nightly 或预发布版本。
+以 2026-09-09 各项目官方稳定发布页为准，版本固定在 `tools/build-inside.sh`，查询记录见 `tools/releases.json`。不使用 nightly 或预发布版本。
 
 | 工具 | 原版本 | 已验证版本 |
 | --- | --- | --- |
@@ -42,6 +46,11 @@ sudo tar xzf modern-linux-x86_64.tar.gz -C /
 | delta | 0.18.2 | 0.19.2 |
 | procs | 0.14.8 | 0.14.12 |
 | mcfly | 0.9.3 | 0.9.4 |
+| GDB | 新增 | 17.2 |
+| CGDB | 新增 | 0.8.0 |
+| Valgrind | 新增 | 3.27.1 |
+| Git | 新增 | 2.55.0 |
+| CMake | 新增 | 4.4.3 |
 
 exa 已替换为 eza，命令名改为 `eza`。使用固定的 Rust 1.98.1 和 Go 1.27.1；升级编译器不等于提高目标机器的内核要求，最终以全系统测试为准。CPU 使用 x86-64 基线，不使用 `native`、AVX2 或 x86-64-v3。Cargo 使用 `--locked`。fish 4.x 使用 Rust 和静态 PCRE2，已移除旧版 fish 3.7.1 的 CMake 补丁。
 
@@ -49,12 +58,12 @@ exa 已替换为 eza，命令名改为 `eza`。使用固定的 Rust 1.98.1 和 G
 
 ## 验证结果
 
-2026-09-09：上述 13 个工具全部通过静态 ELF 审计和真实 CentOS 7 内核冒烟测试，未发生版本回退。发布包约 47 MB；`build/kernel-test/PASS` 记录对应包的 SHA-256。
+2026-09-10：全部 18 个工具通过 ELF 审计和真实 CentOS 7 内核冒烟测试。发布包约 289 MB；`build/kernel-test/PASS` 记录对应发布包的 SHA-256。Git 和 CMake 另在 CentOS 7 用户空间中通过 HTTPS 访问及证书校验（使用构建机内核，不代表旧内核网络路径已验证）。
 
-每个安装的 ELF 都必须通过 `readelf` 审计：无 `PT_INTERP`、无 `DT_NEEDED`。随后 QEMU 使用 TCG 软件模拟和 `qemu64` CPU，无需 KVM，启动 CentOS 7 官方 RPM 中的 **3.10.0-1160.el7.x86_64** 内核。RPM 由 CentOS GPG 密钥验证。
+所有目录中的 ELF（包括 `libexec` 辅助程序）都必须通过 `readelf` 审计：可执行文件无 `PT_INTERP`、无 `DT_NEEDED`；Valgrind 的六个预加载模块允许为共享 ELF，但同样不得声明 `DT_NEEDED` 或动态加载器，所需符号由被测 glibc 进程提供。随后 QEMU 使用 TCG 软件模拟和 `qemu64` CPU，无需 KVM，启动 CentOS 7 官方 RPM 中的 **3.10.0-1160.el7.x86_64** 内核。RPM 由 CentOS GPG 密钥验证。
 
-guest 是无共享库的精简 initramfs，不是完整 CentOS 用户空间；内核是真实 CentOS 7 内核。检查包括 tmux 会话和 PTY、Neovim headless 文件读写、子进程及 PTY、fish 计算和随机数、rg/fd/fzf 搜索、bat/eza/procs 运行、zoxide 数据库操作、McFly 历史记录写入和导出、starship 提示符生成、delta 差异渲染及 shell 初始化。它是基础功能冒烟测试，不等于所有交互、插件和网络路径均经过测试。
+guest 是精简 initramfs，不是完整 CentOS 用户空间；内核是真实 CentOS 7 内核。仅为 Valgrind 的 glibc 测试程序额外放入 CentOS 7 动态加载器和 libc，这些测试文件不进入发布包。检查包括 tmux 会话和 PTY、Neovim headless 文件读写、子进程及 PTY、fish 计算和随机数、rg/fd/fzf 搜索、bat/eza/procs 运行、zoxide 数据库操作、McFly 历史记录写入和导出、starship 提示符生成、delta 差异渲染及 shell 初始化。新增检查包括 GDB 断点和被调试进程运行、CGDB PTY 交互断点、Valgrind 正常程序与越界写入检测、Git 提交/克隆/对象校验，以及 CMake 配置、CTest 执行和 CPack 打包。它是基础功能冒烟测试，不等于所有交互、插件和网络路径均经过测试。
 
-仅测试成功时生成 `build/kernel-test/PASS`，内容为对应发布包的 SHA-256。完整串口日志在 `build/kernel-test/serial.log`。失败或未测试的包不可宣称已通过 CentOS 7 内核验证。
+仅测试成功时生成 `build/kernel-test/PASS`，内容为对应发布包的 SHA-256。完整串口日志在 `build/kernel-test/serial.log`。`bash tools/test-audit.sh` 可验证静态审计会拒绝动态辅助程序、损坏的二进制、未放行的共享模块和额外动态依赖。失败或未测试的包不可宣称已通过 CentOS 7 内核验证。
 
 参考：[Rust 平台要求](https://doc.rust-lang.org/rustc/platform-support.html)、[Neovim 静态构建说明](https://neovim.io/doc/build/)、[fish 4.9.3 构建配置](https://github.com/fish-shell/fish-shell/blob/4.9.3/CMakeLists.txt)。

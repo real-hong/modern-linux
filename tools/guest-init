@@ -81,6 +81,57 @@ while IFS= read -r tool <&3 || [ -n "$tool" ]; do
         mcfly dump >/tmp/mcfly-dump
         grep -q 'echo centos7-smoke' /tmp/mcfly-dump
         ;;
+    gdb)
+        gdb --nx --batch -ex 'set startup-with-shell off' -ex 'break main' \
+            -ex run -ex 'print argc' -ex continue /debug-smoke >/tmp/gdb-output 2>&1
+        cat /tmp/gdb-output
+        grep -q 'Breakpoint 1, main' /tmp/gdb-output
+        grep -q 'exited normally' /tmp/gdb-output
+        ;;
+    cgdb)
+        cgdb --version
+        /cgdb-smoke
+        ;;
+    valgrind)
+        valgrind --version
+        valgrind --tool=memcheck --error-exitcode=97 --leak-check=full \
+            /memory-smoke >/tmp/valgrind-clean 2>&1
+        status=0
+        valgrind --tool=memcheck --error-exitcode=97 \
+            /memory-smoke invalid >/tmp/valgrind-invalid 2>&1 || status=$?
+        cat /tmp/valgrind-clean /tmp/valgrind-invalid
+        test "$status" -eq 97
+        grep -q 'Invalid write of size 1' /tmp/valgrind-invalid
+        ;;
+    git)
+        git --version
+        git init /tmp/git-smoke
+        git -C /tmp/git-smoke config user.name Smoke
+        git -C /tmp/git-smoke config user.email smoke@example.invalid
+        printf 'tracked\n' >/tmp/git-smoke/input
+        git -C /tmp/git-smoke add input
+        git -C /tmp/git-smoke commit -m smoke
+        git clone --no-local /tmp/git-smoke /tmp/git-clone
+        git -C /tmp/git-clone show HEAD:input | grep -qx tracked
+        git -C /tmp/git-clone fsck
+        ;;
+    cmake)
+        cmake --version
+        mkdir -p /tmp/cmake-source
+        cat >/tmp/cmake-source/CMakeLists.txt <<'CMAKE'
+cmake_minimum_required(VERSION 3.20)
+project(smoke NONE)
+enable_testing()
+add_test(NAME echo COMMAND "${CMAKE_COMMAND}" -E echo cmake-smoke)
+set(CPACK_GENERATOR TGZ)
+set(CPACK_INSTALL_CMAKE_PROJECTS "")
+set(CPACK_INSTALLED_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR};share/smoke")
+include(CPack)
+CMAKE
+        cmake -S /tmp/cmake-source -B /tmp/cmake-build -DCMAKE_MAKE_PROGRAM=/bin/busybox
+        ctest --test-dir /tmp/cmake-build --output-on-failure
+        (cd /tmp/cmake-build && cpack -G TGZ)
+        ;;
     *)
         echo "Unknown tool: $tool"
         exit 1

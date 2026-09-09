@@ -6,19 +6,8 @@ out=$stage/opt/modern-linux
 rm -rf "$out/share/terminfo"
 cp -aL /usr/share/terminfo "$out/share/"
 cp /work/list.txt "$out/list.txt"
-# Reject shared modules as well as dynamically linked executables.
-if find "$out" -type f -name '*.so*' | grep .; then
-    echo 'Unexpected shared module in package' >&2
-    exit 1
-fi
-# Check every installed executable, including helper executables.
-while IFS= read -r -d '' binary; do
-    readelf -h "$binary" >/dev/null
-    if readelf -lW "$binary" | grep INTERP >/dev/null || readelf -dW "$binary" | grep '(NEEDED)' >/dev/null; then
-        echo "Dynamic dependency detected: $binary" >&2
-        exit 1
-    fi
-done < <(find "$out/bin" -type f -print0)
+install -Dm644 /etc/ssl/certs/ca-certificates.crt "$out/share/certs/ca-certificates.crt"
+bash /work/tools/audit-static.sh "$out"
 # shellcheck disable=SC2016 # Expand PATH when the user sources env.sh.
 printf 'export PATH="/opt/modern-linux/bin:$PATH"\nexport TERMINFO=/opt/modern-linux/share/terminfo\n' >"$out/env.sh"
 cd "$out"

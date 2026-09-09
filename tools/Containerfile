@@ -8,5 +8,7 @@ RUN apk add --no-cache bash build-base linux-headers cmake ninja curl git perl p
     ncurses-dev ncurses-static ncurses-terminfo libevent-dev libevent-static \
     pcre2-dev openssl-dev openssl-libs-static zlib-dev zlib-static
 RUN apk add --no-cache bison
+RUN apk add --no-cache flex texinfo readline-dev readline-static gmp-dev \
+    mpfr-dev expat-dev expat-static
 RUN rustup toolchain install 1.98.1 --profile minimal && rustup default 1.98.1
 WORKDIR /work

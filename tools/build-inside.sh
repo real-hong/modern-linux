@@ -30,7 +30,7 @@ mapfile -t requested < <(sed 's/#.*//;s/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d'
     exit 1
 }
 for tool in "${requested[@]}"; do
-    case $tool in tmux | neovim | fish | starship | ripgrep | eza | bat | fd | fzf | zoxide | delta | procs | mcfly) ;; *)
+    case $tool in tmux | neovim | fish | starship | ripgrep | eza | bat | fd | fzf | zoxide | delta | procs | mcfly | gdb | cgdb | valgrind | git | cmake) ;; *)
         echo "Unsupported tool: $tool" >&2
         exit 1
         ;;
@@ -65,6 +65,72 @@ for tool in "${requested[@]}"; do
     delta) rust_tool git-delta 0.19.2 delta ;;
     procs) rust_tool procs 0.14.12 procs ;;
     mcfly) rust_tool mcfly 0.9.4 mcfly ;;
+    gdb)
+        fetch gdb-17.2 https://sourceware.org/pub/gdb/releases/gdb-17.2.tar.xz
+        mkdir build
+        cd build
+        LDFLAGS=-static ../configure --prefix="$prefix" --disable-shared --enable-static \
+            --disable-binutils --disable-gas --disable-gold --disable-ld --disable-gprof \
+            --disable-gprofng --disable-sim --disable-gdbserver --disable-nls --disable-werror \
+            --without-python --without-guile --without-debuginfod --without-intel-pt \
+            --without-babeltrace --without-lzma --without-zstd --with-expat --enable-tui
+        make -j"$JOBS" all-gdb
+        # The top-level recursive make filters linker overrides. Relink the
+        # final executable directly: libtool needs -all-static for system libs.
+        make -C gdb -W gdb.o gdb LDFLAGS=-all-static
+        make DESTDIR="$stage" install-gdb
+        echo 'gdb 17.2' >>"$out/VERSIONS"
+        ;;
+    cgdb)
+        fetch cgdb-0.8.0 https://cgdb.me/files/cgdb-0.8.0.tar.gz
+        # Its readline probe predates GCC 14's rejection of implicit int.
+        sed -i 's/^main()$/int main(void)/' configure
+        LDFLAGS=-static ./configure --prefix="$prefix"
+        make -j"$JOBS"
+        make DESTDIR="$stage" install
+        echo 'cgdb 0.8.0' >>"$out/VERSIONS"
+        ;;
+    git)
+        # Build a private libcurl without libidn2/gnulib's conflicting error()
+        # symbol. HTTPS retains OpenSSL and zlib, with no shared dependencies.
+        fetch curl-8.22.0 https://curl.se/download/curl-8.22.0.tar.xz
+        ./configure --prefix="$stage/git-deps" --disable-shared --enable-static \
+            --with-openssl --without-libidn2 --without-libpsl --without-brotli \
+            --without-zstd --without-nghttp2 --without-nghttp3 --without-ngtcp2 \
+            --without-librtmp --without-libssh2 --disable-ldap --disable-ldaps \
+            --disable-docs --disable-manual --with-ca-bundle="$prefix/share/certs/ca-certificates.crt"
+        make -j"$JOBS" -C lib
+        make -C lib install
+        make -C include install
+        fetch git-2.55.0 https://www.kernel.org/pub/software/scm/git/git-2.55.0.tar.xz
+        git_options=(prefix="$prefix" LDFLAGS=-static NO_GETTEXT=1 NO_TCLTK=1 NO_PERL=1 \
+            NO_PYTHON=1 NO_RUST=1 NO_REGEX=NeedsStartEnd NO_INSTALL_HARDLINKS=1 \
+            CURL_CFLAGS="-I$stage/git-deps/include" \
+            CURL_LIBCURL="$stage/git-deps/lib/libcurl.a -lssl -lcrypto -lz -lpthread")
+        make -j"$JOBS" "${git_options[@]}" all
+        make "${git_options[@]}" DESTDIR="$stage" install
+        mkdir -p "$out/etc"
+        printf '[http]\n\tsslCAInfo = %s/share/certs/ca-certificates.crt\n' "$prefix" >"$out/etc/gitconfig"
+        echo 'git 2.55.0' >>"$out/VERSIONS"
+        echo 'git-libcurl 8.22.0' >>"$out/VERSIONS"
+        ;;
+    cmake)
+        fetch cmake-4.4.3 https://github.com/Kitware/CMake/releases/download/v4.4.3/cmake-4.4.3.tar.gz
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_EXE_LINKER_FLAGS=-static \
+            -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_USE_OPENSSL=ON \
+            -DOPENSSL_USE_STATIC_LIBS=TRUE -DCMAKE_USE_SYSTEM_LIBRARIES=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_Libidn2=TRUE \
+            -DCURL_CA_BUNDLE="$prefix/share/certs/ca-certificates.crt" -DBUILD_CursesDialog=OFF
+        cmake --build build -j "$JOBS"
+        DESTDIR="$stage" cmake --install build
+        echo 'cmake 4.4.3' >>"$out/VERSIONS"
+        ;;
+    valgrind)
+        tar xzf /work/build/valgrind-prefix.tar.gz -C "$stage"
+        sha256sum /work/build/sources/valgrind-3.27.1.tar.gz >>"$out/SOURCES.sha256"
+        echo 'valgrind 3.27.1' >>"$out/VERSIONS"
+        ;;
     fzf)
         fetch fzf-0.74.3 https://github.com/junegunn/fzf/archive/refs/tags/v0.74.3.tar.gz
         go build -trimpath -ldflags '-s -w -X main.version=0.74.3' -o "$out/bin/fzf" .

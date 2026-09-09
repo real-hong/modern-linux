@@ -11,3 +11,8 @@ zoxide
 delta
 procs
 mcfly
+gdb
+cgdb
+valgrind
+git
+cmake

@@ -1,7 +1,12 @@
 FROM docker.io/library/centos:7 AS kernel
 RUN printf '[base]\nname=CentOS7\nbaseurl=https://vault.centos.org/7.9.2009/os/$basearch/\nenabled=1\ngpgcheck=1\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7\n' > /etc/yum.repos.d/CentOS-Base.repo && \
     yum --disableplugin=fastestmirror --disablerepo='*' --enablerepo=base \
-    --setopt="proxy=${HTTPS_PROXY:-${HTTP_PROXY:-_none_}}" -y install kernel-3.10.0-1160.el7
+    --setopt="proxy=${HTTPS_PROXY:-${HTTP_PROXY:-_none_}}" -y install kernel-3.10.0-1160.el7 gcc glibc-devel
+COPY tools/memory-smoke.c /tmp/memory-smoke.c
+RUN mkdir -p /valgrind-test/lib64 && \
+    gcc -g -O0 -fno-builtin -march=x86-64 /tmp/memory-smoke.c -o /valgrind-test/memory-smoke && \
+    cp -L /lib64/ld-linux-x86-64.so.2 /lib64/libc.so.6 /valgrind-test/lib64/
 FROM docker.io/library/alpine:3.22
-RUN apk add --no-cache qemu-system-x86_64 busybox-static cpio gzip bash binutils
+RUN apk add --no-cache qemu-system-x86_64 busybox-static cpio gzip bash binutils gcc musl-dev
 COPY --from=kernel /boot/vmlinuz-3.10.0-1160.el7.x86_64 /vmlinuz
+COPY --from=kernel /valgrind-test /valgrind-test
