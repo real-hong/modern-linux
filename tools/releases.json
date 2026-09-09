@@ -1,0 +1,89 @@
+{
+  "checked_on": "2026-09-09",
+  "releases": [
+    {
+      "repo": "tmux/tmux",
+      "tag": "3.7c",
+      "published": "2026-08-17T12:53:48Z",
+      "url": "https://github.com/tmux/tmux/releases/tag/3.7c"
+    },
+    {
+      "repo": "neovim/neovim",
+      "tag": "v0.12.5",
+      "published": "2026-08-23T18:27:13Z",
+      "url": "https://github.com/neovim/neovim/releases/tag/v0.12.5"
+    },
+    {
+      "repo": "fish-shell/fish-shell",
+      "tag": "4.9.3",
+      "published": "2026-09-08T19:27:08Z",
+      "url": "https://github.com/fish-shell/fish-shell/releases/tag/4.9.3"
+    },
+    {
+      "repo": "starship/starship",
+      "tag": "v1.26.0",
+      "published": "2026-06-28T17:02:47Z",
+      "url": "https://github.com/starship/starship/releases/tag/v1.26.0"
+    },
+    {
+      "repo": "BurntSushi/ripgrep",
+      "tag": "15.2.0",
+      "published": "2026-07-15T16:26:10Z",
+      "url": "https://github.com/BurntSushi/ripgrep/releases/tag/15.2.0"
+    },
+    {
+      "repo": "ogham/exa",
+      "tag": "v0.10.1",
+      "published": "2021-04-12T21:42:01Z",
+      "url": "https://github.com/ogham/exa/releases/tag/v0.10.1"
+    },
+    {
+      "repo": "sharkdp/bat",
+      "tag": "v0.26.1",
+      "published": "2025-12-02T20:48:10Z",
+      "url": "https://github.com/sharkdp/bat/releases/tag/v0.26.1"
+    },
+    {
+      "repo": "sharkdp/fd",
+      "tag": "v10.5.0",
+      "published": "2026-08-26T07:59:09Z",
+      "url": "https://github.com/sharkdp/fd/releases/tag/v10.5.0"
+    },
+    {
+      "repo": "junegunn/fzf",
+      "tag": "v0.74.3",
+      "published": "2026-08-17T03:10:34Z",
+      "url": "https://github.com/junegunn/fzf/releases/tag/v0.74.3"
+    },
+    {
+      "repo": "ajeetdsouza/zoxide",
+      "tag": "v0.10.0",
+      "published": "2026-07-04T12:41:16Z",
+      "url": "https://github.com/ajeetdsouza/zoxide/releases/tag/v0.10.0"
+    },
+    {
+      "repo": "dandavison/delta",
+      "tag": "0.19.2",
+      "published": "2026-03-28T19:50:29Z",
+      "url": "https://github.com/dandavison/delta/releases/tag/0.19.2"
+    },
+    {
+      "repo": "dalance/procs",
+      "tag": "v0.14.12",
+      "published": "2026-06-25T10:12:30Z",
+      "url": "https://github.com/dalance/procs/releases/tag/v0.14.12"
+    },
+    {
+      "repo": "cantino/mcfly",
+      "tag": "v0.9.4",
+      "published": "2025-12-24T21:10:19Z",
+      "url": "https://github.com/cantino/mcfly/releases/tag/v0.9.4"
+    },
+    {
+      "repo": "rust-lang/rust",
+      "tag": "1.98.1",
+      "published": "2026-09-03T13:14:07Z",
+      "url": "https://github.com/rust-lang/rust/releases/tag/1.98.1"
+    }
+  ]
+}

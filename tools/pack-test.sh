@@ -19,6 +19,7 @@ while IFS= read -r -d '' binary; do
     fi
 done < <(find bin -type f -print0)
 cp /work/tools/guest-init "$root/init"
+cp /work/tools/nvim-smoke.lua "$root/nvim-smoke.lua"
 chmod 755 "$root/init"
 cd "$root"
 find . -print0 | cpio --null -o -H newc | gzip -1 >/work/build/kernel-test/initramfs.gz

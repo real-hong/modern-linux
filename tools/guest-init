@@ -28,8 +28,14 @@ while IFS= read -r tool <&3 || [ -n "$tool" ]; do
         tmux -L smoke has-session -t smoke
         tmux -L smoke kill-server
         ;;
-    neovim) nvim --headless -u NONE -i NONE /tmp/input '+lua assert(vim.api.nvim_buf_get_lines(0,0,1,false)[1] == "alpha")' '+q!' ;;
-    fish) fish --no-config -c 'test (math 2 + 3) = 5; and string match -q "a*" alpha' ;;
+    neovim)
+        nvim --version | /bin/busybox head -n 1
+        nvim --headless -u NONE -i NONE -l /nvim-smoke.lua
+        ;;
+    fish)
+        # shellcheck disable=SC2016 # Fish expands $n; the guest shell must not.
+        fish --no-config -c 'test (math 2 + 3) = 5; and string match -q "a*" alpha; and set -l n (random 1 10); and test $n -ge 1; and test $n -le 10'
+        ;;
     ripgrep) rg alpha /tmp/input ;;
     fd) fd --no-ignore input /tmp | grep -q input ;;
     fzf) fzf --filter=alpha </tmp/input | grep -q alpha ;;
@@ -37,7 +43,10 @@ while IFS= read -r tool <&3 || [ -n "$tool" ]; do
     exa) exa /tmp ;;
     delta)
         delta --version
-        delta --paging=never </dev/null
+        printf '%s\n' 'diff --git a/input b/input' '--- a/input' '+++ b/input' \
+            '@@ -1 +1 @@' '-alpha' '+beta' >/tmp/input.diff
+        delta --light --paging=never </tmp/input.diff >/tmp/delta-output
+        grep -q beta /tmp/delta-output
         ;;
     procs)
         /bin/sleep 30 &
@@ -54,10 +63,18 @@ while IFS= read -r tool <&3 || [ -n "$tool" ]; do
     starship)
         starship --version
         starship init bash >/tmp/starship-init
+        STARSHIP_SHELL=bash starship prompt --status 0 >/tmp/starship-prompt
+        test -s /tmp/starship-prompt
         ;;
     mcfly)
         mcfly --version
         mcfly init bash >/tmp/mcfly-init
+        : >/tmp/mcfly-history
+        export MCFLY_SESSION_ID=centos7-smoke MCFLY_HISTORY=/tmp/mcfly-history
+        export HISTFILE=/tmp/mcfly-history
+        mcfly add --exit 0 --dir /tmp 'echo centos7-smoke'
+        mcfly dump >/tmp/mcfly-dump
+        grep -q 'echo centos7-smoke' /tmp/mcfly-dump
         ;;
     *)
         echo "Unknown tool: $tool"

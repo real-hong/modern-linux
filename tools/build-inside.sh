@@ -16,6 +16,13 @@ trap 'echo "Build stopped; staging directory: $stage" >&2' ERR
 prefix=/opt/modern-linux
 out=$stage$prefix
 mkdir -p "$out/bin" "$out/share"
+{
+    rustc --version
+    cargo --version
+    go version
+    cc --version
+} >"$out/TOOLCHAIN"
+cp /work/tools/releases.json "$out/RELEASES.json"
 # Validate the entire list before beginning expensive builds.
 mapfile -t requested < <(sed 's/#.*//;s/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d' /work/list.txt)
 ((${#requested[@]})) || {
@@ -49,58 +56,45 @@ rust_tool() {
 for tool in "${requested[@]}"; do
     echo "===== Building $tool ====="
     case $tool in
-    starship) rust_tool starship 1.22.1 starship ;;
-    ripgrep) rust_tool ripgrep 14.1.1 rg ;;
+    starship) rust_tool starship 1.26.0 starship ;;
+    ripgrep) rust_tool ripgrep 15.2.0 rg ;;
     exa) rust_tool exa 0.10.1 exa ;;
-    bat) rust_tool bat 0.24.0 bat ;;
-    fd) rust_tool fd-find 10.2.0 fd ;;
-    zoxide) rust_tool zoxide 0.9.6 zoxide ;;
-    delta) rust_tool git-delta 0.18.2 delta ;;
-    procs) rust_tool procs 0.14.8 procs ;;
-    mcfly) rust_tool mcfly 0.9.3 mcfly ;;
+    bat) rust_tool bat 0.26.1 bat ;;
+    fd) rust_tool fd-find 10.5.0 fd ;;
+    zoxide) rust_tool zoxide 0.10.0 zoxide ;;
+    delta) rust_tool git-delta 0.19.2 delta ;;
+    procs) rust_tool procs 0.14.12 procs ;;
+    mcfly) rust_tool mcfly 0.9.4 mcfly ;;
     fzf)
-        fetch fzf-0.60.3 https://github.com/junegunn/fzf/archive/refs/tags/v0.60.3.tar.gz
-        go build -trimpath -ldflags '-s -w -X main.version=0.60.3' -o "$out/bin/fzf" .
-        echo 'fzf 0.60.3' >>"$out/VERSIONS"
+        fetch fzf-0.74.3 https://github.com/junegunn/fzf/archive/refs/tags/v0.74.3.tar.gz
+        go build -trimpath -ldflags '-s -w -X main.version=0.74.3' -o "$out/bin/fzf" .
+        echo 'fzf 0.74.3' >>"$out/VERSIONS"
         ;;
     tmux)
-        fetch tmux-3.5a https://github.com/tmux/tmux/releases/download/3.5a/tmux-3.5a.tar.gz
+        fetch tmux-3.7c https://github.com/tmux/tmux/releases/download/3.7c/tmux-3.7c.tar.gz
         LDFLAGS=-static ./configure --prefix="$prefix" --enable-static
         make -j"$JOBS"
         make DESTDIR="$stage" install
-        echo 'tmux 3.5a' >>"$out/VERSIONS"
+        echo 'tmux 3.7c' >>"$out/VERSIONS"
         ;;
     fish)
-        fetch fish-3.7.1 https://github.com/fish-shell/fish-shell/releases/download/3.7.1/fish-3.7.1.tar.xz
-        # Upstream rejects all static builds due to glibc limitations. This
-        # build uses musl; remove exactly that guard, preserving other checks.
-        python3 - <<'PY'
-from pathlib import Path
-p = Path('CMakeLists.txt')
-s = p.read_text()
-a = 'if (CMAKE_EXE_LINKER_FLAGS MATCHES ".*-static.*")\n    message(FATAL_ERROR "Fish does not support static linking")\nendif()'
-assert s.count(a) == 1, 'fish static guard changed'
-s = s.replace(a, '# musl static build')
-s = s.replace('project(fish)', 'project(fish)\nset(CMAKE_FIND_LIBRARY_SUFFIXES ".a")')
-p.write_text(s)
-PY
+        fetch fish-4.9.3 https://github.com/fish-shell/fish-shell/releases/download/4.9.3/fish-4.9.3.tar.xz
         cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_EXE_LINKER_FLAGS=-static \
-            -DCMAKE_FIND_LIBRARY_SUFFIXES=.a -DBUILD_TESTING=OFF -DBUILD_DOCS=OFF \
-            -DCMAKE_INSTALL_SYSCONFDIR="$prefix/etc" \
-            -DWITH_GETTEXT=OFF -DCURSES_LIBRARY=/usr/lib/libncursesw.a \
-            -DSYS_PCRE2_LIB=/usr/lib/libpcre2-32.a
+            -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_SYSCONFDIR="$prefix/etc" \
+            -DWITH_DOCS=OFF -DWITH_MESSAGE_LOCALIZATION=OFF \
+            -DFISH_USE_SYSTEM_PCRE2=OFF -DRust_CARGO_TARGET="$CARGO_BUILD_TARGET" \
+            -DCARGO_FLAGS=--locked
         cmake --build build -j "$JOBS"
         DESTDIR="$stage" cmake --install build
-        echo 'fish 3.7.1' >>"$out/VERSIONS"
+        echo 'fish 4.9.3' >>"$out/VERSIONS"
         ;;
     neovim)
-        fetch neovim-0.10.4 https://github.com/neovim/neovim/archive/refs/tags/v0.10.4.tar.gz
+        fetch neovim-0.12.5 https://github.com/neovim/neovim/archive/refs/tags/v0.12.5.tar.gz
         make -j"$JOBS" CMAKE_BUILD_TYPE=Release CMAKE_INSTALL_PREFIX="$prefix" \
             DEPS_CMAKE_FLAGS=-DUSE_BUNDLED_TS_PARSERS=OFF \
-            CMAKE_EXTRA_FLAGS='-DENABLE_LIBINTL=OFF -DENABLE_LTO=OFF -DCMAKE_EXE_LINKER_FLAGS=-static'
+            CMAKE_EXTRA_FLAGS='-DSTATIC_BUILD=ON -DENABLE_LIBINTL=OFF -DENABLE_LTO=OFF -DCMAKE_EXE_LINKER_FLAGS=-static'
         DESTDIR="$stage" cmake --install build
-        echo 'neovim 0.10.4' >>"$out/VERSIONS"
+        echo 'neovim 0.12.5' >>"$out/VERSIONS"
         ;;
     esac
 done
