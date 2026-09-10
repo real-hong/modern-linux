@@ -1,5 +1,9 @@
 # modern-linux：CentOS 7 静态工具包
 
+另有独立的 **LLVM 23.1.1 C/C++ 工具链**：`bash build-llvm.sh` 构建并验证，输出 `dist/llvm-23.1.1-centos7-x86_64.tar.gz`。包含 Clang、LLD、clangd、clang-format、clang-tidy、LLVM 工具与开发库，以及 compiler-rt（含 sanitizer 运行库），使用 CentOS 7 glibc 2.17，携带独立的开发 sysroot 和 GCC C++ 运行库。支持免 sudo 安装及 Bash/fish 环境脚本，目标机无须安装前面的 GCC 包。构建输入及范围见 [LLVM 包说明](tools/llvm-README.txt)。
+
+2026-09-11：LLVM 独立包约 320 MiB，147 个 ELF 通过 glibc ≤ 2.17 依赖审计。zlib 1.3.1 静态编入，支持压缩调试信息，无额外 `libz.so` 依赖。干净 CentOS 7 容器和真实 `3.10.0-1160.el7.x86_64` 内核均通过 C23/C++23、PIE、多线程、异常、ThinLTO/完整 LTO、压缩 DWARF、共享库、IR/JIT、clang-format、clang-tidy、clangd 及 LLVM API 静态/动态链接冒烟测试。另通过普通用户迁移安装、fish 编译运行和 CMake SDK 链接验证。compiler-rt 的 ASan/UBSan/TSan/LSan 实际故障检测、builtins、libFuzzer 和 profile/coverage 也通过上述容器及真实内核验证；TSan 禁用 SSE4.2，libFuzzer 移除强制 POPCNT，兼容基础 x86_64。MSan 运行库已包含，但随包 libstdc++ 未插桩，其他运行库未逐项验证。日志在 `build/llvm/`，`build/llvm/kernel-test/PASS` 绑定通过测试的压缩包 SHA-256；未运行完整上游测试套件。
+
 另有独立的 **GCC 16.2.0 / Binutils 2.47 C/C++ 工具链**：`bash build-gcc.sh` 构建，`bash tools/test-gcc.sh` 验证，输出 `dist/gcc-16.2.0-centos7-x86_64.tar.gz`，不混入下面的工具包。以 CentOS 7 glibc 2.17 构建，携带 GCC 运行库及开发 sysroot；支持解压到用户目录，无须 sudo，环境脚本自动定位安装路径。详见 [GCC 包说明](tools/gcc-README.txt)。
 
 2026-09-10：GCC 独立包约 98 MiB，86 个 ELF 通过 glibc ≤ 2.17 依赖审计；干净 CentOS 7 容器及 QEMU 的真实 `3.10.0-1160.el7.x86_64` 内核均通过 C23、C++23、PIE、多线程、异常、LTO、OpenMP、共享库、LTO 静态归档及静态 C++ 运行库链接冒烟测试。结果见 `build/gcc/container-test.log`、`build/gcc/kernel-test/serial.log`；`build/gcc/kernel-test/PASS` 记录通过测试的压缩包 SHA-256。未运行完整 GCC 上游测试套件。

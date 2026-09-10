@@ -1,0 +1,20 @@
+#!/bin/sh
+fail() {
+    echo LLVM_CENTOS7_KERNEL_FAIL
+    poweroff -f
+    sleep 1000
+}
+trap fail EXIT
+set -eu
+export PATH=/bin HOME=/root
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+exec </dev/console >/dev/console 2>&1
+uname -r | grep -q '^3\.10\.0-1160\.el7\.x86_64$'
+uname -a
+sh /llvm-smoke.sh
+sh /compiler-rt-smoke.sh
+echo LLVM_CENTOS7_KERNEL_PASS
+trap - EXIT
+poweroff -f
