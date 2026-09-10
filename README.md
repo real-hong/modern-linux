@@ -1,5 +1,11 @@
 # modern-linux：CentOS 7 静态工具包
 
+另有独立的 **GCC 16.2.0 / Binutils 2.47 C/C++ 工具链**：`bash build-gcc.sh` 构建，`bash tools/test-gcc.sh` 验证，输出 `dist/gcc-16.2.0-centos7-x86_64.tar.gz`，不混入下面的工具包。以 CentOS 7 glibc 2.17 构建，携带 GCC 运行库及开发 sysroot；支持解压到用户目录，无须 sudo，环境脚本自动定位安装路径。详见 [GCC 包说明](tools/gcc-README.txt)。
+
+2026-09-10：GCC 独立包约 98 MiB，86 个 ELF 通过 glibc ≤ 2.17 依赖审计；干净 CentOS 7 容器及 QEMU 的真实 `3.10.0-1160.el7.x86_64` 内核均通过 C23、C++23、PIE、多线程、异常、LTO、OpenMP、共享库、LTO 静态归档及静态 C++ 运行库链接冒烟测试。结果见 `build/gcc/container-test.log`、`build/gcc/kernel-test/serial.log`；`build/gcc/kernel-test/PASS` 记录通过测试的压缩包 SHA-256。未运行完整 GCC 上游测试套件。
+
+另以 UID 12345 的普通用户在 CentOS 7 容器中解压并移动安装目录，在 `/opt/gcc-16.2.0` 不存在的情况下通过同一组编译运行测试，日志为 `build/gcc/unprivileged-test.log`。
+
 读取 `list.txt`，从源码构建全部 18 个工具。目标是 **x86_64、静态可执行文件、CentOS 7 的 3.10 内核**。除 Valgrind 使用 CentOS 7 glibc 构建并携带必需的预加载模块外，其余工具使用 musl 全静态构建。默认流程包括 QEMU 全系统验证，不以 CentOS 容器中的运行结果代替旧内核测试。
 
 ```sh
