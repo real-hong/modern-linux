@@ -1,5 +1,9 @@
 # modern-linux：CentOS 7 静态工具包
 
+另有独立的 **kitty 0.48.2 X11 终端包**：`bash build-kitty.sh` 构建并验证，输出 `dist/kitty-0.48.2-centos7-x86_64.tar.gz`。支持免 sudo 解压安装和整体移动，包含 kitty、kitten、Python 及所需普通运行库。`bin/kitty` 使用系统 OpenGL 3.1+ 驱动；`bin/kitty-software` 使用随包 Mesa CPU 渲染器，适用于 CentOS 7 原生软件 OpenGL 版本不足的机器。仍需 X11 桌面、字体及标准 fontconfig/X11 数据；不含 Wayland。安装方式和兼容范围见 [kitty 包说明](tools/kitty-README.txt)。
+
+2026-09-15：kitty 包约 58 MiB，108 个 ELF 通过 glibc ≤ 2.17 审计。软件渲染入口在普通用户的带空格迁移目录，以及 QEMU 的真实 `3.10.0-1160.el7.x86_64` 内核中通过窗口创建、PTY、子进程运行、Python/SSL 和键盘组合字符表检查。测试不覆盖物理 GPU 驱动；旧 systemd 的可选用户 scope 功能不可用。日志在 `build/kitty/`，`build/kitty/kernel-test/PASS` 绑定验证包的 SHA-256。
+
 另有独立的 **LLVM 23.1.1 C/C++ 工具链**：`bash build-llvm.sh` 构建并验证，输出 `dist/llvm-23.1.1-centos7-x86_64.tar.gz`。包含 Clang、LLD、clangd、clang-format、clang-tidy、LLVM 工具与开发库，以及 compiler-rt（含 sanitizer 运行库），使用 CentOS 7 glibc 2.17，携带独立的开发 sysroot 和 GCC C++ 运行库。支持免 sudo 安装及 Bash/fish 环境脚本，目标机无须安装前面的 GCC 包。构建输入及范围见 [LLVM 包说明](tools/llvm-README.txt)。
 
 2026-09-11：LLVM 独立包约 320 MiB，147 个 ELF 通过 glibc ≤ 2.17 依赖审计。zlib 1.3.1 静态编入，支持压缩调试信息，无额外 `libz.so` 依赖。干净 CentOS 7 容器和真实 `3.10.0-1160.el7.x86_64` 内核均通过 C23/C++23、PIE、多线程、异常、ThinLTO/完整 LTO、压缩 DWARF、共享库、IR/JIT、clang-format、clang-tidy、clangd 及 LLVM API 静态/动态链接冒烟测试。另通过普通用户迁移安装、fish 编译运行和 CMake SDK 链接验证。compiler-rt 的 ASan/UBSan/TSan/LSan 实际故障检测、builtins、libFuzzer 和 profile/coverage 也通过上述容器及真实内核验证；TSan 禁用 SSE4.2，libFuzzer 移除强制 POPCNT，兼容基础 x86_64。MSan 运行库已包含，但随包 libstdc++ 未插桩，其他运行库未逐项验证。日志在 `build/llvm/`，`build/llvm/kernel-test/PASS` 绑定通过测试的压缩包 SHA-256；未运行完整上游测试套件。

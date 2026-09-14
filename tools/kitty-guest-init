@@ -1,0 +1,22 @@
+#!/bin/bash
+set -eu
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/root LANG=C.UTF-8
+mkdir -p /proc /sys /dev /run /tmp
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+mkdir -p /dev/pts /dev/shm /root
+mount -t devpts devpts /dev/pts
+mount -t tmpfs tmpfs /dev/shm
+chmod 1777 /tmp /dev/shm
+exec </dev/console >/dev/console 2>&1
+fail() { echo KITTY_CENTOS7_KERNEL_FAIL; poweroff -f; sleep 1000; }
+trap fail EXIT
+modprobe virtio_pci
+modprobe virtio_rng
+uname -r | grep -qx '3.10.0-1160.el7.x86_64'
+uname -a
+bash /kitty-smoke.sh
+echo KITTY_CENTOS7_KERNEL_PASS
+trap - EXIT
+poweroff -f

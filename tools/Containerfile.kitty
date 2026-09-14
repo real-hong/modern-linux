@@ -1,0 +1,13 @@
+FROM docker.io/library/golang:1.27.1-alpine3.24 AS go
+FROM localhost/modern-linux-gcc-builder
+RUN yum --disableplugin=fastestmirror --disablerepo='*' --enablerepo=base \
+    --setopt="proxy=${HTTPS_PROXY:-${HTTP_PROXY:-_none_}}" -y install \
+    pkgconfig fontconfig-devel freetype-devel harfbuzz-devel libpng-devel lcms2-devel \
+    libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel \
+    libxkbcommon-devel libxkbcommon-x11-devel dbus-devel mesa-libGL-devel \
+    cairo-devel libcanberra-devel openssl-devel bzip2-devel libffi-devel \
+    xorg-x11-server-Xvfb mesa-dri-drivers dejavu-sans-mono-fonts ncurses git
+COPY --from=go /usr/local/go /usr/local/go
+ENV PATH=/usr/local/go/bin:$PATH
+RUN yum --disableplugin=fastestmirror --disablerepo='*' --enablerepo=base \
+    --setopt="proxy=${HTTPS_PROXY:-${HTTP_PROXY:-_none_}}" -y install perl-IPC-Cmd
